@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bee Sound Board</title>
+<style>
+:root{
+  --bg:#160a26; --panel:#22113a; --panel2:#2d1750; --line:#4a2a78;
+  --gold:#f5c542; --gold2:#ffdf7a; --purple:#7b3fe4; --text:#f6f0ff; --muted:#b9a8d6;
+  --hype:#7b3fe4; --bee:#2f8f9d; --celebrate:#e0a400; --bummer:#5b6378; --victory:#c2185b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,-apple-system,sans-serif}
+header{display:flex;align-items:center;gap:16px;padding:14px 20px;background:linear-gradient(90deg,#2a1150,#160a26);border-bottom:3px solid var(--gold)}
+header h1{margin:0;font-size:26px;letter-spacing:.5px}
+header h1 span{color:var(--gold)}
+.hdr-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+button{font-family:inherit;cursor:pointer}
+.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:700;font-size:15px;color:#1a0b2e;background:var(--gold)}
+.btn.ghost{background:transparent;color:var(--text);border:2px solid var(--line)}
+.btn.stop{background:#ff4d5e;color:#fff;font-size:18px;padding:12px 22px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:18px;padding:18px 20px}
+@media(max-width:1000px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.sec h2{margin:0 0 4px;font-size:20px;display:flex;align-items:center;gap:10px}
+.sec .hint{color:var(--muted);font-size:13px;margin:0 0 10px}
+.sec .len{margin-left:auto;font-size:13px;font-weight:400;color:var(--muted)}
+.sec .len select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+.dot{width:14px;height:14px;border-radius:50%}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.cue{position:relative;text-align:left;border:0;border-radius:12px;padding:12px 12px 10px;min-height:78px;color:#fff;background:var(--c);box-shadow:inset 0 -4px 0 rgba(0,0,0,.25);transition:transform .06s}
+.cue:active{transform:scale(.97)}
+.cue .t{font-weight:800;font-size:15px;line-height:1.2}
+.cue .a{font-size:12px;opacity:.85;margin-top:3px}
+.cue .k{position:absolute;top:6px;right:8px;font-size:11px;opacity:.75;font-weight:700}
+.cue.playing{outline:4px solid var(--gold2);outline-offset:2px}
+.cue .bar{position:absolute;left:0;bottom:0;height:4px;background:var(--gold2);width:0;border-radius:0 0 0 12px}
+.tune{display:none;margin-top:8px;gap:6px;align-items:center;font-size:12px}
+body.tuning .tune{display:flex}
+.tune input{width:56px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:5px;padding:2px 4px}
+.tune .mk{font-size:11px;padding:3px 6px;border-radius:5px;border:0;background:rgba(0,0,0,.35);color:#fff}
+.side{display:flex;flex-direction:column;gap:18px}
+#mix .big{font-size:56px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1}
+#mix .sub{color:var(--muted);font-size:13px}
+#mix .now{margin:10px 0 4px;font-size:18px;font-weight:700}
+#mix .next{color:var(--muted);font-size:14px}
+.prog{height:10px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:10px 0}
+.prog>div{height:100%;width:0;background:linear-gradient(90deg,var(--purple),var(--gold))}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.mixlist{max-height:260px;overflow:auto;margin-top:10px;font-size:13px;border-top:1px solid var(--line);padding-top:6px}
+.mixlist div{display:flex;gap:8px;padding:3px 0;color:var(--muted)}
+.mixlist div.on{color:var(--gold);font-weight:700}
+#outList div{cursor:pointer}#outList div:hover{color:var(--text)}
+.mixlist div span:first-child{width:44px;font-variant-numeric:tabular-nums}
+#status{font-size:13px;color:var(--muted);margin-top:8px}
+#warn{display:none;background:#5a1a1a;border:1px solid #ff6b6b;color:#ffd7d7;border-radius:10px;padding:10px 12px;font-size:14px}
+.np{font-size:14px;color:var(--muted)}
+.np b{color:var(--text)}
+kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div style="font-size:34px">🐝</div>
+  <h1>The Bainbridge Bee <span>Sound Board</span></h1>
+  <div class="hdr-right">
+    <button class="btn ghost" id="tuneBtn" title="Adjust where each song starts">Tune start times</button>
+    <button class="btn stop" id="stopBtn">■ STOP <kbd>Esc</kbd></button>
+  </div>
+</header>
+
+<main>
+  <div class="side" id="cues"></div>
+
+  <div class="side">
+    <div class="card">
+      <div id="warn"></div>
+      <div class="np" id="np">Nothing playing</div>
+      <div style="margin-top:10px" id="playerWrap"><div id="player"></div></div>
+      <div id="status">Loading Spotify player…</div>
+    </div>
+
+    <div class="card" id="mix">
+      <h2 style="margin:0 0 6px">Pre-Show Mix</h2>
+      <div class="sub">L-O-V-E → Let's Get It Started · ends at exactly 45:00</div>
+      <div class="big" id="mixClock">45:00</div>
+      <div class="sub" id="mixEnd">Press play to start</div>
+      <div class="prog"><div id="mixProg"></div></div>
+      <div class="now" id="mixNow">—</div>
+      <div class="next" id="mixNext"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="mixPlay">▶ Start 45-min Mix</button>
+        <button class="btn ghost" id="mixSkip">Skip song ⏭</button>
+        <button class="btn ghost" id="mixReset">Reset</button>
+      </div>
+      <div class="mixlist" id="mixList"></div>
+    </div>
+
+    <div class="card" id="outro">
+      <h2 style="margin:0 0 6px">Outro Set 🎉</h2>
+      <div class="sub">Celebration songs to send everyone home happy. Plays back-to-back until you stop it.</div>
+      <div class="now" id="outNow">—</div>
+      <div class="next" id="outNext"></div>
+      <div class="prog"><div id="outProg"></div></div>
+      <div class="row" style="margin-top:8px;align-items:center">
+        <button class="btn" id="outPlay">▶ Play Outro Set</button>
+        <button class="btn ghost" id="outSkip">Skip ⏭</button>
+        <label class="sub">Each song:
+          <select id="outMode" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 6px">
+            <option value="0">Full song</option><option value="90">90 s</option><option value="60">60 s</option>
+          </select></label>
+      </div>
+      <div class="mixlist" id="outList"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+/* ---------- Song data (from the "UW SPELLING BEE" playlist) ---------- */
+const T = (id,title,artist,dur,start=0,kind='track') => ({uri:`spotify:${kind}:${id}`,title,artist,dur,start});
+const E = (id,title,artist,dur,start=0) => T(id,title,artist,dur,start,'episode');
+
+const SECTIONS = [
+  {key:'hype', name:'Hype', color:'var(--hype)', hint:'Between rounds. Plays until you press STOP or pick another cue.', len:0, cues:[
+    T('2HHtWyy5CgaQbC7XSoOb0e','Eye of the Tiger','Survivor',243,0),
+    T('6ofZctOpjFdf4HruRdjWBP','We Will Rock You','Queen',122,0),
+    T('3Ce9ZNyFgPDm1tgLFfa1KZ','The Final Countdown','The Hit Crew',303,0),
+    T('6B0KmTDlqR44Qv6XwMz1si','Boom Boom Pow','Black Eyed Peas',218,0),
+    T('32OlwWuMpZ6b0aN2RZOeMS','Uptown Funk','Mark Ronson, Bruno Mars',269,0),
+    T('37ZJ0p5Jm13JPevGcx4SkF',"Livin' On A Prayer",'Bon Jovi',249,0),
+    T('5X79VgaOn8pDTpTKu3PixN',"We're Not Gonna Take It",'Twisted Sister',219,0),
+    T('7N3PAbqfTjSEU1edb2tY8j','Jump','Van Halen',241,0),
+    T('4jTqsgDaffdNH0BMBwhjFv',"I Love Rock 'N Roll",'Joan Jett & the Blackhearts',175,0),
+    T('3BovdzfaX4jb5KFQwoPfAw','Beat It','Michael Jackson',258,0),
+    T('21qnJAMtzC6S5SESuqQLEK','Pump Up The Jam','Technotronic',320,0),
+  ]},
+  {key:'bee', name:'Bee Moments', color:'var(--bee)', hint:'Game-show cues: thinking music, walk-ons, bee buzz.', len:30, cues:[
+    T('4qkYiZablQoG7f0Qu4Nd1c','Jeopardy! Think Music','Geek Music',127,0),
+    T('2KPGcbwUsQN2ZP8y7DNupR','Flight of the Bumblebee','Rousseau',80,0),
+    T('4xvUbhmsPPI6axSoUixFvL','Family Feud Theme','Film & TV Masters',132,0),
+    T('20alNh0CJnzfwMD3DklbwP','The Price Is Right Theme','TV Tunesters',66,0),
+  ]},
+  {key:'celebrate', name:'Celebrate', color:'var(--celebrate)', hint:'Correct word! Short burst, then stops on its own.', len:15, cues:[
+    T('2ImcEehrSJF6qFPLH8ZOva','Crowd Cheering','Sound effect',31,0),
+    T('2RtaULyHlJgNTPBCONXKh4','Air Horn','Sound effect',6,0),
+    T('12sXrSIdiqCtB0vKYHNH29','All I Do Is Win','DJ Khaled',230,18),
+    T('1jDJFeK9x3OZboIAHsY9k2',"I'm Still Standing",'Elton John',183,55),
+    T('3K7Q9PHUWPTaknlbFPThn2','Celebration','Kool & The Gang',298,22),
+    T('60nZcImufyMA1MKQY3dcCH','Happy','Pharrell Williams',233,45),
+  ]},
+  {key:'bummer', name:'Bummer', color:'var(--bummer)', hint:'Missed word. Quick sting, then stops on its own.', len:8, cues:[
+    T('5pGo2b6ZpLm0L4jsqFg9Oq','Wrong Answer Buzzer','Sound effect',2,0),
+    T('6naxalmIoLFWR0siv8dnQQ','Oops!...I Did It Again','Britney Spears',211,40),
+    T('1KPuohcXPmJYQfdyg9zKmR','Another One Bites the Dust','Queen',214,45),
+    T('3pv7Q5v2dpdefwdWIvE7yH','Shake It Off','Taylor Swift',219,38),
+  ]},
+  {key:'victory', name:'Victory · Champion', color:'var(--victory)', hint:'End of the night. Plays the full song.', len:0, cues:[
+    T('12sXrSIdiqCtB0vKYHNH29','All I Do Is Win','DJ Khaled',230,0),
+    T('3K7Q9PHUWPTaknlbFPThn2','Celebration','Kool & The Gang',298,0),
+    T('2H1047e0oMSj10dgp7p2VG','I Gotta Feeling','Black Eyed Peas',289,0),
+    T('5RKQ5NdjSh2QzD4MaunT91',"Don't Stop Believin",'Journey',249,0),
+    T('3SnGymj6ijE2iuUfWxLo1q',"I'm Coming Out",'Diana Ross',323,0),
+    T('2HHtWyy5CgaQbC7XSoOb0e','Eye of the Tiger','Survivor',243,0),
+  ]},
+];
+
+const MIX = [
+  T('4QxDOjgpYtQDxxbWPuEJOy','L-O-V-E','Nat King Cole',155,0),
+  T('2C5SI38AMmqckQGnD1H2FO',"Signed, Sealed, Delivered",'Stevie Wonder',158,0),
+  T('5Hroj5K7vLpIG4FNCRIjbP','Best Day Of My Life','American Authors',194,0),
+  T('05wIrZSwuaVWhcv5FfqeH0','Walking On Sunshine','Katrina & The Waves',238,0),
+  T('2VCUcIPY3i6pv9Nu9Vg6k3','ABC','The Jackson 5',177,0),
+  T('7tqhbajSfrz2F7E1Z75ASX',"Ain't No Mountain High Enough",'Marvin Gaye, Tammi Terrell',151,0),
+  T('2grjqo0Frpf2okIBiifQKs','September','Earth, Wind & Fire',215,0),
+  T('0ikz6tENMONtK6qGkOrU3c','Wake Me Up Before You Go-Go','Wham!',231,0),
+  T('4ekGUt2Yx92UwEXyM8xu0a','R.O.C.K. In The U.S.A.','John Mellencamp',176,0),
+  T('47BBI51FKFwOMlIiX6m8ya','I Want It That Way','Backstreet Boys',213,0),
+  T('7s25THrKz86DM225dOYwnr','Respect','Aretha Franklin',147,0),
+  T('7qpvLstF3L1UgyEDBV4pjx','Wannabe','Spice Girls',176,0),
+  T('2tUBqZG2AbRi7Q0BIrVrEj','I Wanna Dance with Somebody','Whitney Houston',292,0),
+  T('6uQKuonTU8VKBz5SHZuQXD','This Is How We Do It','Montell Jordan',238,0),
+  T('5Q0Nhxo0l2bP3pNjpGJwV1','Party In The U.S.A.','Miley Cyrus',202,0),
+  T('7py80lGeFMciK4V1eENMS1','Hollaback Girl','Gwen Stefani',200,0),
+  T('7LoGfKBAaOl0nxhodJ1240','Word Up','Cameo',260,0),
+  T('5IGMzRLdXsDKTjcLQbamaS','Glamorous','Fergie, Ludacris',246,0),
+  T('60nZcImufyMA1MKQY3dcCH','Happy','Pharrell Williams',233,0),
+  T('78zYiMv9yNTHgmm6kaUPCm','Saturday Night','Bay City Rollers',174,0),
+  T('32OlwWuMpZ6b0aN2RZOeMS','Uptown Funk','Mark Ronson, Bruno Mars',269,50),
+  T('3SnGymj6ijE2iuUfWxLo1q',"I'm Coming Out",'Diana Ross',323,0),
+  T('4YOJFyjqh8eAcbKFfv88mV','Y.M.C.A.','Village People',286,0),
+  T('2qYBZY6bR7l52BGhkBSk9O','Cha Cha Slide','Mr. C',222,0),
+  T('3K7Q9PHUWPTaknlbFPThn2','Celebration','Kool & The Gang',298,0),
+  T('5RKQ5NdjSh2QzD4MaunT91',"Don't Stop Believin",'Journey',249,0),
+  T('2H1047e0oMSj10dgp7p2VG','I Gotta Feeling','Black Eyed Peas',289,0),
+  T('37LEkmNdegFwoS55DdL6Ov',"Let's Get It Started",'Black Eyed Peas',218,0),
+];
+const OUTRO = [
+  T('1qiQduM84A0VeH8Y2uAbqi',"That's the Way (I Like It)",'KC & The Sunshine Band',185),
+  T('2Nc1Tl1qHWLAtBnqRJmkP3','Boogie Shoes','KC & The Sunshine Band',132),
+  T('39lSeqnyjZJejRuaREfyLL','Hungry Like the Wolf','Duran Duran',220),
+  T('4JfuiOWlWCkjP6OKurHjSn','Walk This Way','Aerosmith',220),
+  T('0dOg1ySSI7NkpAe89Zo0b9','Born in the U.S.A.','Bruce Springsteen',279),
+  T('4sscDOZCkbLSlDqcCgUJnX','Whip It','DEVO',161),
+  T('2dCmGcEOQrMQhMMS8Vj7Ca','Super Freak','Rick James',205),
+  T('4CNL4GBNTdVIU5Nk6hB4LC','Brown Eyed Girl','Van Morrison',186),
+  T('0GjEhVFGZW8afUYGChu3Rr','Dancing Queen','ABBA',230),
+  T('4UCkX8nrBlpxjrrEqtb46a','Apache','The Sugarhill Gang',373),
+  T('1lB2kyB5h9ceZ388GBfC9L','Jam On It','Newcleus',383),
+  T('6QqK6a1CmV4L504uMQaGDH','Freeze-Frame','The J. Geils Band',237),
+  T('3JLcx6VISiIx3Y30XPQ4K9','No Parking (On the Dance Floor)','Midnight Star',268),
+  T('4ykliBeOayAZlqpWX0vWE0','Wipeout','Fat Boys',241),
+  T('0KQh7AuuZvpTKWhcJa8Pbr','Funkytown','Lipps Inc.',239),
+  T('1VKPiQJnV15flF5B3zeocD','You Dropped A Bomb On Me','The Gap Band',312),
+  T('5tVA6TkbaAH9QMITTQRrNv',"Free Fallin",'Tom Petty',256),
+  T('6ztstiyZL6FXzh4aG46ZPD','Boogie Wonderland','Earth, Wind & Fire, The Emotions',288),
+];
+const MIX_TOTAL = 45*60;          // exactly 45:00
+const FINALE_LEN = 100;           // last song plays its final 100 s, so it ends on its real ending at 45:00
+const SEG = (MIX_TOTAL - FINALE_LEN) / (MIX.length - 1);   // ≈ 86.7 s per song
+MIX[MIX.length-1].start = MIX[MIX.length-1].dur - FINALE_LEN;
+let SCHED = MIX.map((_,i)=> i < MIX.length-1 ? i*SEG : MIX_TOTAL - FINALE_LEN);
+const buildSched = () => { SCHED = MIX.map((_,i)=> i < MIX.length-1 ? i*SEG : MIX_TOTAL - FINALE_LEN); };
+const mixStartAt = i => SCHED[i];
+
+/* ---------- Saved start-time tweaks (this browser only) ---------- */
+const STORE='beeSoundBoard.v2';
+let saved={}; try{ saved=JSON.parse(localStorage.getItem(STORE)||'{}')||{}; }catch(e){}
+const persist=()=>{ try{ localStorage.setItem(STORE,JSON.stringify(saved)); }catch(e){} };
+SECTIONS.forEach(s=>{ s.cues.forEach((c,i)=>{ const k=s.key+':'+c.uri; if(saved[k]!=null) c.start=saved[k]; }); if(saved['len:'+s.key]!=null) s.len=saved['len:'+s.key]; });
+
+/* ---------- Spotify player ---------- */
+let ctl=null, state={pos:0,dur:0,paused:true}, pendingSeek=null, readyCb=null, ready=false;
+const $=id=>document.getElementById(id);
+const fmt=s=>{ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+
+window.onSpotifyIframeApiReady = (API) => {
+  API.createController($('player'), {uri:MIX[0].uri, width:'100%', height:152}, (c) => {
+    ctl=c;
+    c.addListener('ready', () => { ready=true; $('status').textContent='Spotify player ready. Signed in to Premium in this browser = full songs.'; if(readyCb){const f=readyCb; readyCb=null; f();} });
+    c.addListener('playback_update', e => {
+      const d=e.data; state={pos:d.position/1000, dur:d.duration/1000, paused:d.isPaused, buffering:d.isBuffering, uri:d.playingURI};
+      if(pendingSeek!=null && !d.isPaused && !d.isBuffering && d.duration>0){
+        const target=pendingSeek; pendingSeek=null;
+        if(Math.abs(state.pos-target)>2) c.seek(target);
+      }
+      // Preview-mode detection: Spotify serves 30-second previews when not signed in to Premium
+      if(current && current.dur>40 && d.duration>0 && d.duration<=31000){
+        $('warn').style.display='block';
+        $('warn').innerHTML='<b>Preview mode (30-second clips).</b> Click <b>Log in</b> inside the Spotify player below, or sign in at open.spotify.com in this same browser with a <b>Premium</b> account, then reload this page.';
+      } else if(d.duration>31000){ $('warn').style.display='none'; }
+    });
+  });
+};
+
+let current=null, stopTimer=null, cueBtn=null, cueStartedAt=0, cueLen=0;
+function playUri(item, startSec){
+  if(!ctl){ $('status').textContent='Spotify player is still loading — try again in a second.'; return; }
+  current=item;
+  clearTimeout(stopTimer);
+  $('np').innerHTML=`Now playing: <b>${item.title}</b> — ${item.artist}`;
+  ready=false; pendingSeek=startSec>0?startSec:null;
+  let fired=false;
+  const go=()=>{ if(fired) return; fired=true; ctl.play(); };
+  readyCb=go; setTimeout(go,1200);
+  ctl.loadUri(item.uri, false, Math.floor(startSec||0));
+}
+function stopAll(){
+  clearTimeout(stopTimer);
+  if(ctl) ctl.pause();
+  if(cueBtn){ cueBtn.classList.remove('playing'); cueBtn.querySelector('.bar').style.width=0; cueBtn=null; }
+  if(mix.running) pauseMix();
+  if(out.running) stopOutro();
+  current=null; $('np').textContent='Stopped';
+}
+
+/* ---------- Cue buttons ---------- */
+const hotkeys='1234567890qwertyuiopasdfghjklzxcvbnm'.split(''); let hk=0; const keyMap={};
+function render(){
+  const root=$('cues'); root.innerHTML='';
+  SECTIONS.forEach(s=>{
+    const sec=document.createElement('div'); sec.className='card sec';
+    const opts=[[0,'Full / until stopped'],[5,'5 s'],[8,'8 s'],[10,'10 s'],[15,'15 s'],[20,'20 s'],[30,'30 s'],[45,'45 s'],[60,'60 s']]
+      .map(([v,l])=>`<option value="${v}" ${v==s.len?'selected':''}>${l}</option>`).join('');
+    sec.innerHTML=`<h2><span class="dot" style="background:${s.color}"></span>${s.name}<span class="len">Clip length <select data-k="${s.key}">${opts}</select></span></h2><p class="hint">${s.hint}</p><div class="grid"></div>`;
+    sec.querySelector('select').onchange=e=>{ s.len=+e.target.value; saved['len:'+s.key]=s.len; persist(); };
+    const g=sec.querySelector('.grid');
+    s.cues.forEach((c,i)=>{
+      const key=hotkeys[hk++]; keyMap[key]=()=>fire(s,c,b);
+      const b=document.createElement('button'); b.className='cue'; b.style.setProperty('--c',s.color);
+      b.innerHTML=`<span class="k">${key.toUpperCase()}</span><div class="t">${c.title}</div><div class="a">${c.artist}</div>
+        <div class="tune" onclick="event.stopPropagation()">start <input type="number" min="0" step="1" value="${c.start}"> s <button class="mk" title="Use the current position of the song that's playing">📍 mark now</button></div><div class="bar"></div>`;
+      b.onclick=()=>fire(s,c,b);
+      const inp=b.querySelector('input');
+      inp.onchange=()=>{ c.start=Math.max(0,+inp.value||0); saved[s.key+':'+c.uri]=c.start; persist(); };
+      b.querySelector('.mk').onclick=(e)=>{ e.stopPropagation(); if(current===c){ c.start=Math.floor(state.pos); inp.value=c.start; saved[s.key+':'+c.uri]=c.start; persist(); } else { $('status').textContent='Play this cue first, then press "mark now" at the moment you want it to start.'; } };
+      g.appendChild(b);
+    });
+    root.appendChild(sec);
+  });
+}
+function fire(s,c,b){
+  if(mix.running) pauseMix();
+  if(out.running) stopOutro();
+  if(cueBtn){ cueBtn.classList.remove('playing'); cueBtn.querySelector('.bar').style.width=0; }
+  cueBtn=b; b.classList.add('playing');
+  playUri(c,c.start);
+  cueLen=s.len; cueStartedAt=performance.now();
+  if(s.len>0){ stopTimer=setTimeout(()=>{ if(current===c){ ctl.pause(); b.classList.remove('playing'); b.querySelector('.bar').style.width=0; cueBtn=null; current=null; $('np').textContent='Cue finished'; } }, s.len*1000+700); }
+}
+setInterval(()=>{ if(cueBtn && cueLen>0){ const p=Math.min(1,(performance.now()-cueStartedAt)/(cueLen*1000+700)); cueBtn.querySelector('.bar').style.width=(p*100)+'%'; } },100);
+
+/* ---------- 45-minute mix (wall-clock scheduled so it lands on exactly 45:00) ---------- */
+const mix={running:false, elapsedBefore:0, startedAt:0, idx:-1, done:false};
+const mixElapsed=()=>mix.elapsedBefore + (mix.running ? (performance.now()-mix.startedAt)/1000 : 0);
+function mixIndexAt(e){ let i=0; while(i<MIX.length-1 && e>=SCHED[i+1]) i++; return i; }
+function startMix(){
+  if(!ctl){ $('status').textContent='Spotify player is still loading — try again in a second.'; return; }
+  if(mix.done) resetMix();
+  if(out.running) stopOutro();
+  if(cueBtn){ cueBtn.classList.remove('playing'); cueBtn=null; }
+  clearTimeout(stopTimer);
+  mix.running=true; mix.startedAt=performance.now(); mix.idx=-1;
+  $('mixPlay').textContent='❚❚ Pause Mix';
+  tickMix();
+}
+function pauseMix(){
+  if(!mix.running) return;
+  mix.elapsedBefore=mixElapsed(); mix.running=false; mix.idx=-1;
+  if(ctl) ctl.pause();
+  $('mixPlay').textContent='▶ Resume Mix';
+}
+function resetMix(){
+  if(mix.running && ctl) ctl.pause();
+  mix.running=false; mix.elapsedBefore=0; mix.idx=-1; mix.done=false; buildSched(); renderMixList();
+  $('mixPlay').textContent='▶ Start 45-min Mix'; updateMixUI(0);
+}
+function skipMix(){
+  if(!mix.running) return;
+  const e=mixElapsed(), i=mixIndexAt(e);
+  if(i>=MIX.length-2) return; // never skip into the finale early
+  // Next song starts now; the remaining songs share the remaining time evenly, so the mix still ends at 45:00.
+  const n=MIX.length-1, endOfBody=MIX_TOTAL-FINALE_LEN, remaining=n-(i+1), seg=(endOfBody-e)/remaining;
+  for(let k=i+1;k<n;k++) SCHED[k]=e+(k-(i+1))*seg;
+  renderMixList();
+}
+function tickMix(){
+  if(!mix.running) return;
+  const e=mixElapsed();
+  if(e>=MIX_TOTAL){ ctl.pause(); mix.running=false; mix.done=true; mix.elapsedBefore=MIX_TOTAL; $('mixPlay').textContent='▶ Play Mix Again'; $('np').textContent='Mix finished — 45:00'; updateMixUI(MIX_TOTAL); return; }
+  const i=mixIndexAt(e);
+  if(i!==mix.idx){ mix.idx=i; const t=MIX[i]; playUri(t, t.start + (e - mixStartAt(i))); }
+  updateMixUI(e);
+}
+setInterval(tickMix,250);
+function updateMixUI(e){
+  const left=MIX_TOTAL-e; $('mixClock').textContent=fmt(left);
+  $('mixProg').style.width=(e/MIX_TOTAL*100)+'%';
+  const i=mixIndexAt(Math.min(e,MIX_TOTAL-0.01));
+  if(mix.running){ const end=new Date(Date.now()+left*1000); $('mixEnd').textContent='Ends at '+end.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }
+  else if(!mix.done && e===0) $('mixEnd').textContent='Press play to start'; else if(!mix.done) $('mixEnd').textContent='Paused';
+  $('mixNow').textContent=(e>0||mix.running)? `♪ ${MIX[i].title} — ${MIX[i].artist}` : '—';
+  $('mixNext').textContent= i<MIX.length-1 ? `Next: ${MIX[i+1].title} in ${fmt(mixStartAt(i+1)-e)}` : 'Finale — ends on the song’s real ending';
+  [...$('mixList').children].forEach((d,k)=>d.classList.toggle('on', (e>0||mix.running) && k===i));
+}
+function renderMixList(){ $('mixList').innerHTML=MIX.map((t,i)=>`<div><span>${fmt(mixStartAt(i))}</span><span>${t.title} — ${t.artist}</span></div>`).join(''); }
+renderMixList();
+$('mixPlay').onclick=()=> mix.running ? pauseMix() : startMix();
+$('mixSkip').onclick=skipMix;
+$('mixReset').onclick=resetMix;
+$('stopBtn').onclick=stopAll;
+$('tuneBtn').onclick=()=>{ document.body.classList.toggle('tuning'); $('tuneBtn').textContent=document.body.classList.contains('tuning')?'Done tuning':'Tune start times'; };
+/* ---------- Outro set (plays songs back-to-back) ---------- */
+const out={running:false, idx:0, startedAt:0, len:0};
+try{ const m=localStorage.getItem('beeSoundBoard.outMode'); if(m!=null) $('outMode').value=m; }catch(e){}
+$('outMode').onchange=()=>{ try{ localStorage.setItem('beeSoundBoard.outMode',$('outMode').value); }catch(e){} if(out.running) out.len=outLen(OUTRO[out.idx]); };
+const outLen=t=>{ const m=+$('outMode').value; return m>0 ? Math.min(m,t.dur) : t.dur; };
+function playOutro(i){
+  if(!ctl){ $('status').textContent='Spotify player is still loading — try again in a second.'; return; }
+  if(mix.running) pauseMix();
+  if(cueBtn){ cueBtn.classList.remove('playing'); cueBtn.querySelector('.bar').style.width=0; cueBtn=null; }
+  clearTimeout(stopTimer);
+  out.running=true; out.idx=((i%OUTRO.length)+OUTRO.length)%OUTRO.length; out.startedAt=performance.now(); out.len=outLen(OUTRO[out.idx]);
+  playUri(OUTRO[out.idx],0);
+  $('outPlay').textContent='■ Stop Outro'; updateOutroUI();
+}
+function stopOutro(){ out.running=false; if(ctl) ctl.pause(); $('outPlay').textContent='▶ Play Outro Set'; updateOutroUI(); }
+function tickOutro(){
+  if(!out.running) return;
+  const t=OUTRO[out.idx], el=(performance.now()-out.startedAt)/1000;
+  const atEnd = state.uri===t.uri && state.dur>0 && state.pos>=state.dur-1.2 && el>5;
+  if(el>=out.len+1.5 || atEnd){ playOutro(out.idx+1); return; }
+  updateOutroUI();
+}
+setInterval(tickOutro,250);
+function updateOutroUI(){
+  const t=OUTRO[out.idx], el=out.running?(performance.now()-out.startedAt)/1000:0;
+  $('outNow').textContent= out.running ? `♪ ${t.title} — ${t.artist}` : '—';
+  $('outNext').textContent= out.running ? `Next: ${OUTRO[(out.idx+1)%OUTRO.length].title} in ${fmt(out.len-el)}` : `${OUTRO.length} songs · click any song below to start there`;
+  $('outProg').style.width= out.running ? Math.min(100,el/out.len*100)+'%' : '0';
+  [...$('outList').children].forEach((d,k)=>d.classList.toggle('on', out.running && k===out.idx));
+}
+$('outList').innerHTML=OUTRO.map((t,i)=>`<div data-i="${i}"><span>${i+1}.</span><span>${t.title} — ${t.artist}</span></div>`).join('');
+$('outList').onclick=e=>{ const d=e.target.closest('[data-i]'); if(d) playOutro(+d.dataset.i); };
+$('outPlay').onclick=()=> out.running ? stopOutro() : playOutro(out.idx);
+$('outSkip').onclick=()=>{ if(out.running) playOutro(out.idx+1); };
+updateOutroUI();
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  if(e.key==='Escape'){ stopAll(); return; }
+  const f=keyMap[e.key.toLowerCase()]; if(f){ e.preventDefault(); f(); }
+});
+render(); updateMixUI(0);
+</script>
+<script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
+</body>
+</html>
