@@ -121,13 +121,14 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padd
 /* ---------- Song data (from the "UW SPELLING BEE" playlist) ---------- */
 const T = (id,title,artist,dur,start=0,kind='track') => ({uri:`spotify:${kind}:${id}`,title,artist,dur,start});
 const E = (id,title,artist,dur,start=0) => T(id,title,artist,dur,start,'episode');
+const C = (id,title,artist,dur,start,end) => Object.assign(T(id,title,artist,dur,start),{clip:end-start});
 
 const SECTIONS = [
   {key:'hype', name:'Hype', color:'var(--hype)', hint:'Between rounds. Plays until you press STOP or pick another cue.', len:0, cues:[
-    T('2HHtWyy5CgaQbC7XSoOb0e','Eye of the Tiger','Survivor',243,0),
-    T('6ofZctOpjFdf4HruRdjWBP','We Will Rock You','Queen',122,0),
-    T('3Ce9ZNyFgPDm1tgLFfa1KZ','The Final Countdown','The Hit Crew',303,0),
-    T('6B0KmTDlqR44Qv6XwMz1si','Boom Boom Pow','Black Eyed Peas',218,0),
+    C('2HHtWyy5CgaQbC7XSoOb0e','Eye of the Tiger','Survivor',243,8,30),
+    C('6ofZctOpjFdf4HruRdjWBP','We Will Rock You','Queen',122,0,33),
+    C('3Ce9ZNyFgPDm1tgLFfa1KZ','The Final Countdown','The Hit Crew',303,247,280),
+    C('6B0KmTDlqR44Qv6XwMz1si','Boom Boom Pow','Black Eyed Peas',218,0,28),
     T('32OlwWuMpZ6b0aN2RZOeMS','Uptown Funk','Mark Ronson, Bruno Mars',269,0),
     T('37ZJ0p5Jm13JPevGcx4SkF',"Livin' On A Prayer",'Bon Jovi',249,0),
     T('5X79VgaOn8pDTpTKu3PixN',"We're Not Gonna Take It",'Twisted Sister',219,0),
@@ -145,22 +146,23 @@ const SECTIONS = [
   {key:'celebrate', name:'Celebrate', color:'var(--celebrate)', hint:'Correct word! Short burst, then stops on its own.', len:15, cues:[
     T('2ImcEehrSJF6qFPLH8ZOva','Crowd Cheering','Sound effect',31,0),
     T('2RtaULyHlJgNTPBCONXKh4','Air Horn','Sound effect',6,0),
-    T('12sXrSIdiqCtB0vKYHNH29','All I Do Is Win','DJ Khaled',230,18),
-    T('1jDJFeK9x3OZboIAHsY9k2',"I'm Still Standing",'Elton John',183,55),
+    C('12sXrSIdiqCtB0vKYHNH29','All I Do Is Win','DJ Khaled',230,4,31),
+    C('1jDJFeK9x3OZboIAHsY9k2',"I'm Still Standing",'Elton John',183,127,160),
+    C('5ubvP9oKmxLUVq506fgLhk',"Stayin' Alive",'Bee Gees',285,40,56),
     T('3K7Q9PHUWPTaknlbFPThn2','Celebration','Kool & The Gang',298,22),
     T('60nZcImufyMA1MKQY3dcCH','Happy','Pharrell Williams',233,45),
   ]},
   {key:'bummer', name:'Bummer', color:'var(--bummer)', hint:'Missed word. Quick sting, then stops on its own.', len:8, cues:[
     T('5pGo2b6ZpLm0L4jsqFg9Oq','Wrong Answer Buzzer','Sound effect',2,0),
-    T('6naxalmIoLFWR0siv8dnQQ','Oops!...I Did It Again','Britney Spears',211,40),
+    C('6naxalmIoLFWR0siv8dnQQ','Oops!...I Did It Again','Britney Spears',211,16,24),
     T('1KPuohcXPmJYQfdyg9zKmR','Another One Bites the Dust','Queen',214,45),
-    T('3pv7Q5v2dpdefwdWIvE7yH','Shake It Off','Taylor Swift',219,38),
+    C('3pv7Q5v2dpdefwdWIvE7yH','Shake It Off','Taylor Swift',219,7,53),
   ]},
   {key:'victory', name:'Victory · Champion', color:'var(--victory)', hint:'End of the night. Plays the full song.', len:0, cues:[
     T('12sXrSIdiqCtB0vKYHNH29','All I Do Is Win','DJ Khaled',230,0),
     T('3K7Q9PHUWPTaknlbFPThn2','Celebration','Kool & The Gang',298,0),
     T('2H1047e0oMSj10dgp7p2VG','I Gotta Feeling','Black Eyed Peas',289,0),
-    T('5RKQ5NdjSh2QzD4MaunT91',"Don't Stop Believin",'Journey',249,0),
+    T('5RKQ5NdjSh2QzD4MaunT91',"Don't Stop Believin'",'Journey',249,0),
     T('3SnGymj6ijE2iuUfWxLo1q',"I'm Coming Out",'Diana Ross',323,0),
     T('2HHtWyy5CgaQbC7XSoOb0e','Eye of the Tiger','Survivor',243,0),
   ]},
@@ -192,7 +194,7 @@ const MIX = [
   T('4YOJFyjqh8eAcbKFfv88mV','Y.M.C.A.','Village People',286,0),
   T('2qYBZY6bR7l52BGhkBSk9O','Cha Cha Slide','Mr. C',222,0),
   T('3K7Q9PHUWPTaknlbFPThn2','Celebration','Kool & The Gang',298,0),
-  T('5RKQ5NdjSh2QzD4MaunT91',"Don't Stop Believin",'Journey',249,0),
+  T('5RKQ5NdjSh2QzD4MaunT91',"Don't Stop Believin'",'Journey',249,0),
   T('2H1047e0oMSj10dgp7p2VG','I Gotta Feeling','Black Eyed Peas',289,0),
   T('37LEkmNdegFwoS55DdL6Ov',"Let's Get It Started",'Black Eyed Peas',218,0),
 ];
@@ -213,7 +215,7 @@ const OUTRO = [
   T('4ykliBeOayAZlqpWX0vWE0','Wipeout','Fat Boys',241),
   T('0KQh7AuuZvpTKWhcJa8Pbr','Funkytown','Lipps Inc.',239),
   T('1VKPiQJnV15flF5B3zeocD','You Dropped A Bomb On Me','The Gap Band',312),
-  T('5tVA6TkbaAH9QMITTQRrNv',"Free Fallin",'Tom Petty',256),
+  T('5tVA6TkbaAH9QMITTQRrNv',"Free Fallin'",'Tom Petty',256),
   T('6ztstiyZL6FXzh4aG46ZPD','Boogie Wonderland','Earth, Wind & Fire, The Emotions',288),
 ];
 const MIX_TOTAL = 45*60;          // exactly 45:00
@@ -225,7 +227,7 @@ const buildSched = () => { SCHED = MIX.map((_,i)=> i < MIX.length-1 ? i*SEG : MI
 const mixStartAt = i => SCHED[i];
 
 /* ---------- Saved start-time tweaks (this browser only) ---------- */
-const STORE='beeSoundBoard.v2';
+const STORE='beeSoundBoard.v3';
 let saved={}; try{ saved=JSON.parse(localStorage.getItem(STORE)||'{}')||{}; }catch(e){}
 const persist=()=>{ try{ localStorage.setItem(STORE,JSON.stringify(saved)); }catch(e){} };
 SECTIONS.forEach(s=>{ s.cues.forEach((c,i)=>{ const k=s.key+':'+c.uri; if(saved[k]!=null) c.start=saved[k]; }); if(saved['len:'+s.key]!=null) s.len=saved['len:'+s.key]; });
@@ -289,7 +291,7 @@ function render(){
     s.cues.forEach((c,i)=>{
       const key=hotkeys[hk++]; keyMap[key]=()=>fire(s,c,b);
       const b=document.createElement('button'); b.className='cue'; b.style.setProperty('--c',s.color);
-      b.innerHTML=`<span class="k">${key.toUpperCase()}</span><div class="t">${c.title}</div><div class="a">${c.artist}</div>
+      b.innerHTML=`<span class="k">${key.toUpperCase()}</span><div class="t">${c.title}</div><div class="a">${c.artist}${c.clip?` · ${fmt(c.start)}–${fmt(c.start+c.clip)}`:''}</div>
         <div class="tune" onclick="event.stopPropagation()">start <input type="number" min="0" step="1" value="${c.start}"> s <button class="mk" title="Use the current position of the song that's playing">📍 mark now</button></div><div class="bar"></div>`;
       b.onclick=()=>fire(s,c,b);
       const inp=b.querySelector('input');
@@ -306,8 +308,8 @@ function fire(s,c,b){
   if(cueBtn){ cueBtn.classList.remove('playing'); cueBtn.querySelector('.bar').style.width=0; }
   cueBtn=b; b.classList.add('playing');
   playUri(c,c.start);
-  cueLen=s.len; cueStartedAt=performance.now();
-  if(s.len>0){ stopTimer=setTimeout(()=>{ if(current===c){ ctl.pause(); b.classList.remove('playing'); b.querySelector('.bar').style.width=0; cueBtn=null; current=null; $('np').textContent='Cue finished'; } }, s.len*1000+700); }
+  cueLen=c.clip||s.len; cueStartedAt=performance.now();
+  if(cueLen>0){ stopTimer=setTimeout(()=>{ if(current===c){ ctl.pause(); b.classList.remove('playing'); b.querySelector('.bar').style.width=0; cueBtn=null; current=null; $('np').textContent='Cue finished'; } }, cueLen*1000+700); }
 }
 setInterval(()=>{ if(cueBtn && cueLen>0){ const p=Math.min(1,(performance.now()-cueStartedAt)/(cueLen*1000+700)); cueBtn.querySelector('.bar').style.width=(p*100)+'%'; } },100);
 
