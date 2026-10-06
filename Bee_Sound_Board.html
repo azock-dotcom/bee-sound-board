@@ -243,10 +243,13 @@ window.onSpotifyIframeApiReady = (API) => {
     c.addListener('ready', () => { ready=true; $('status').textContent='Spotify player ready. Signed in to Premium in this browser = full songs.'; if(readyCb){const f=readyCb; readyCb=null; f();} });
     c.addListener('playback_update', e => {
       const d=e.data; state={pos:d.position/1000, dur:d.duration/1000, paused:d.isPaused, buffering:d.isBuffering, uri:d.playingURI};
-      if(pendingSeek!=null && !d.isPaused && !d.isBuffering && d.duration>0){
-        const target=pendingSeek; pendingSeek=null;
-        if(Math.abs(state.pos-target)>2) c.seek(target);
+      // Make sure the NEW song starts at the right spot (Spotify sometimes resumes where it last left off).
+      if(pendingSeek && d.playingURI===pendingSeek.uri && !d.isPaused && !d.isBuffering && d.duration>0){
+        const off=Math.abs(state.pos-pendingSeek.t);
+        if(off<=2 || pendingSeek.tries>=4 || performance.now()-pendingSeek.at>8000){ pendingSeek=null; }
+        else if(performance.now()-pendingSeek.last>700){ pendingSeek.tries++; pendingSeek.last=performance.now(); c.seek(pendingSeek.t); }
       }
+      if(current && d.playingURI===current.uri){ const el=$('npPos'); if(el) el.textContent=' · '+fmt(state.pos); }
       // Preview-mode detection: Spotify serves 30-second previews when not signed in to Premium
       if(current && current.dur>40 && d.duration>0 && d.duration<=31000){
         $('warn').style.display='block';
@@ -261,8 +264,8 @@ function playUri(item, startSec){
   if(!ctl){ $('status').textContent='Spotify player is still loading — try again in a second.'; return; }
   current=item;
   clearTimeout(stopTimer);
-  $('np').innerHTML=`Now playing: <b>${item.title}</b> — ${item.artist}`;
-  ready=false; pendingSeek=startSec>0?startSec:null;
+  $('np').innerHTML=`Now playing: <b>${item.title}</b> — ${item.artist}<span id="npPos"></span>`;
+  ready=false; pendingSeek={uri:item.uri, t:Math.floor(startSec||0), tries:0, last:0, at:performance.now()};
   let fired=false;
   const go=()=>{ if(fired) return; fired=true; ctl.play(); };
   readyCb=go; setTimeout(go,1200);
